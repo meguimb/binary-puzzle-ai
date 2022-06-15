@@ -30,6 +30,10 @@ class TakuzuState:
     def __lt__(self, other):
         return self.id < other.id
 
+    def set(self, action):
+        row, column, num = action
+        self.board.grid[row][column] = num
+        pass
     # TODO: outros metodos da classe
 
 
@@ -38,11 +42,11 @@ class Board:
 
     def __init__(self, N, board):
         self.N = N
-        self.board = board
+        self.grid = board
 
     def get_number(self, row: int, col: int) -> int:
         """Devolve o valor na respetiva posição do tabuleiro."""
-        return self.board[row][col]
+        return self.grid[row][col]
 
     def adjacent_vertical_numbers(self, row: int, col: int) -> (int, int):
         """Devolve os valores imediatamente abaixo e acima,
@@ -94,17 +98,27 @@ class Board:
         N = int(lines[0])
 
         # criar lista vazia NxN
-        board = np.empty((N, N), int)
+        grid = np.empty((N, N), int)
 
         # criar uma array 2d e pôr os valores do ficheiro de input
         for i in range(N):
             line_split = lines[i+1].split("\t")
             for j in range(N):
-                board[i][j] = int(line_split[j])
+                grid[i][j] = int(line_split[j])
         
-        return Board(N, board)
+        return Board(N, grid)
 
     # TODO: outros metodos da classe
+    def __str__(self):
+        result = ''
+        for i in range(self.N):
+            for j in range(self.N):
+                if(j == self.N-1):
+                    result += str(self.board[i][j]) + '\n'
+                else:
+                    result += str(self.board[i][j]) + '\t'
+
+        return result
 
 
 class Takuzu(Problem):
@@ -119,8 +133,8 @@ class Takuzu(Problem):
         # column 0's and 1's: [[0, 1], [1, 2], [1, 0], [2, 0]] => na 1a coluna tem 0 "0"s e 1 "1"
         # row 0's and 1's: [[1, 1], [1, 0], [1, 0], [1, 2]]
         
-        for i in range(self.board.N):
-            for j in range(self.board.N):
+        for i in range(N):
+            for j in range(N):
                 curr = board.get_number(i, j)
                 if (curr < 2):
                     self.row_counter[i-1][curr] += 1
@@ -131,8 +145,9 @@ class Takuzu(Problem):
         """Retorna uma lista de ações que podem ser executadas a
         partir do estado passado como argumento."""
         actions = []
-        for i in range(self.board.N):
-            for j in range(self.board.N):
+        N = self.board.N
+        for i in range(N):
+            for j in range(N):
                 if (board.get_number(i, j)) == 2:
                     actions += [(i, j, 0)]
                     actions += [(i, j, 1)]
@@ -144,7 +159,8 @@ class Takuzu(Problem):
         'state' passado como argumento. A ação a executar deve ser uma
         das presentes na lista obtida pela execução de
         self.actions(state)."""
-        # TODO
+        next_state = TakuzuState(state.board)
+
         pass
 
     def goal_test(self, state: TakuzuState):
@@ -170,7 +186,7 @@ if __name__ == "__main__":
     # Imprimir para o standard output no formato indicado.
     
     board = Board.parse_instance_from_stdin()
-    print("Initial:\n", board.board, sep="")
+    print("Initial:\n", board.grid, sep="")
     # Imprimir valores adjacentes
     print(board.adjacent_vertical_numbers(3, 3))
     print(board.adjacent_horizontal_numbers(3, 3))

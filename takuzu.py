@@ -42,18 +42,38 @@ class Board:
 
     def get_number(self, row: int, col: int) -> int:
         """Devolve o valor na respetiva posição do tabuleiro."""
-        return self.board[row-1][col-1]
+        return self.board[row][col]
 
     def adjacent_vertical_numbers(self, row: int, col: int) -> (int, int):
         """Devolve os valores imediatamente abaixo e acima,
         respectivamente."""
+        if(row >= self.N-1):
+            below = None
+        else:
+            below = self.get_number(row+1, col)
+        
+        if(row <= 0):
+            above = None
+        else:
+            above = self.get_number(row-1, col)
+
+        return (below, above)
         
 
     def adjacent_horizontal_numbers(self, row: int, col: int) -> (int, int):
         """Devolve os valores imediatamente à esquerda e à direita,
         respectivamente."""
-        # TODO
-        pass
+        if(col <= 0):
+            left = None
+        else:
+            left = self.get_number(row, col-1)
+        
+        if(col >= self.N-1):
+            right = None
+        else:
+            right = self.get_number(row, col+1)
+
+        return (left, right)
 
     @staticmethod
     def parse_instance_from_stdin():
@@ -66,6 +86,7 @@ class Board:
             > from sys import stdin
             > stdin.readline()
         """
+        # add error checking
         lines = []
         # receber linhas do ficheiro de input, incluindo N
         for line in sys.stdin:
@@ -129,5 +150,11 @@ if __name__ == "__main__":
     # Imprimir para o standard output no formato indicado.
     
     board = Board.parse_instance_from_stdin()
-    board.get_number(3, 4)
+    print('hello world')
+    print("Initial:\n", board.board, sep="")
+    # Imprimir valores adjacentes
+    print(board.adjacent_vertical_numbers(3, 3))
+    print(board.adjacent_horizontal_numbers(3, 3))
+    print(board.adjacent_vertical_numbers(1, 1))
+    print(board.adjacent_horizontal_numbers(1, 1))
     pass

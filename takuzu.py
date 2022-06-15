@@ -114,9 +114,9 @@ class Board:
         for i in range(self.N):
             for j in range(self.N):
                 if(j == self.N-1):
-                    result += str(self.board[i][j]) + '\n'
+                    result += str(self.grid[i][j]) + '\n'
                 else:
-                    result += str(self.board[i][j]) + '\t'
+                    result += str(self.grid[i][j]) + '\t'
 
         return result
 
@@ -186,7 +186,7 @@ if __name__ == "__main__":
     # Imprimir para o standard output no formato indicado.
     
     board = Board.parse_instance_from_stdin()
-    print("Initial:\n", board.grid, sep="")
+    print("Initial:\n", board, sep="")
     # Imprimir valores adjacentes
     print(board.adjacent_vertical_numbers(3, 3))
     print(board.adjacent_horizontal_numbers(3, 3))

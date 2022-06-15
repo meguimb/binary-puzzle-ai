@@ -36,16 +36,18 @@ class TakuzuState:
 class Board:
     """Representação interna de um tabuleiro de Takuzu."""
 
+    def __init__(self, N, board):
+        self.N = N
+        self.board = board
+
     def get_number(self, row: int, col: int) -> int:
         """Devolve o valor na respetiva posição do tabuleiro."""
-        # TODO
-        pass
+        return self.board[row-1][col-1]
 
     def adjacent_vertical_numbers(self, row: int, col: int) -> (int, int):
         """Devolve os valores imediatamente abaixo e acima,
         respectivamente."""
-        # TODO
-        pass
+        
 
     def adjacent_horizontal_numbers(self, row: int, col: int) -> (int, int):
         """Devolve os valores imediatamente à esquerda e à direita,
@@ -68,7 +70,7 @@ class Board:
         # receber linhas do ficheiro de input, incluindo N
         for line in sys.stdin:
             lines = lines + [line]
-        N = int(lines[0]);
+        N = int(lines[0])
 
         # criar lista vazia NxN
         board = np.empty((N, N), int)
@@ -77,14 +79,9 @@ class Board:
         for i in range(N):
             line_split = lines[i+1].split("\t")
             for j in range(N):
-                board[i][j] = int(line_split[j]);
+                board[i][j] = int(line_split[j])
         
-        my_board = Board()
-        my_board.N = N;
-        my_board.board = board; 
-        print(board)
-        return my_board
-        pass
+        return Board(N, board)
 
     # TODO: outros metodos da classe
 
@@ -130,5 +127,7 @@ if __name__ == "__main__":
     # Usar uma técnica de procura para resolver a instância,
     # Retirar a solução a partir do nó resultante,
     # Imprimir para o standard output no formato indicado.
-    Board.parse_instance_from_stdin()
+    
+    board = Board.parse_instance_from_stdin()
+    board.get_number(3, 4)
     pass

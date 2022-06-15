@@ -110,13 +110,33 @@ class Board:
 class Takuzu(Problem):
     def __init__(self, board: Board):
         """O construtor especifica o estado inicial."""
-        # TODO
+        """O construtor especifica o estado inicial."""
+        self.board = board
+        N = board.N
+        self.row_counter = np.zeros((N, 2), int)
+        self.column_counter = np.zeros((N, 2), int)
+        # tomando como ex a instancia de takuzu na pagina 2
+        # column 0's and 1's: [[0, 1], [1, 2], [1, 0], [2, 0]] => na 1a coluna tem 0 "0"s e 1 "1"
+        # row 0's and 1's: [[1, 1], [1, 0], [1, 0], [1, 2]]
+        
+        for i in range(self.board.N):
+            for j in range(self.board.N):
+                curr = board.get_number(i, j)
+                if (curr < 2):
+                    self.row_counter[i-1][curr] += 1
+                    self.column_counter[j-1][curr] += 1
         pass
 
     def actions(self, state: TakuzuState):
         """Retorna uma lista de ações que podem ser executadas a
         partir do estado passado como argumento."""
-        # TODO
+        actions = []
+        for i in range(self.board.N):
+            for j in range(self.board.N):
+                if (board.get_number(i, j)) == 2:
+                    actions += [(i, j, 0)]
+                    actions += [(i, j, 1)]
+        return actions
         pass
 
     def result(self, state: TakuzuState, action):
@@ -150,11 +170,13 @@ if __name__ == "__main__":
     # Imprimir para o standard output no formato indicado.
     
     board = Board.parse_instance_from_stdin()
-    print('hello world')
     print("Initial:\n", board.board, sep="")
     # Imprimir valores adjacentes
     print(board.adjacent_vertical_numbers(3, 3))
     print(board.adjacent_horizontal_numbers(3, 3))
     print(board.adjacent_vertical_numbers(1, 1))
     print(board.adjacent_horizontal_numbers(1, 1))
+    problem = Takuzu(board)
+    initial_state = TakuzuState(board)
+    print(problem.actions(initial_state))
     pass

@@ -30,10 +30,13 @@ class TakuzuState:
     def __lt__(self, other):
         return self.id < other.id
 
-    def set(self, action):
+    def do_action(self, action):
         row, column, num = action
-        self.board.grid[row][column] = num
-        pass
+        next_grid = np.array([row[:] for row in self.board.grid])
+        next_grid[row][column] = num
+        next_board = Board(self.board.N, next_grid)
+        next_state = TakuzuState(next_board)
+        return next_state
     # TODO: outros metodos da classe
 
 
@@ -99,7 +102,7 @@ class Board:
 
         # criar lista vazia NxN
         grid = np.empty((N, N), int)
-
+        
         # criar uma array 2d e pôr os valores do ficheiro de input
         for i in range(N):
             line_split = lines[i+1].split("\t")
@@ -125,6 +128,7 @@ class Takuzu(Problem):
     def __init__(self, board: Board):
         """O construtor especifica o estado inicial."""
         """O construtor especifica o estado inicial."""
+        super().__init__(TakuzuState(board))
         self.board = board
         N = board.N
         self.row_counter = np.zeros((N, 2), int)
@@ -152,22 +156,46 @@ class Takuzu(Problem):
                     actions += [(i, j, 0)]
                     actions += [(i, j, 1)]
         return actions
-        pass
 
     def result(self, state: TakuzuState, action):
         """Retorna o estado resultante de executar a 'action' sobre
         'state' passado como argumento. A ação a executar deve ser uma
         das presentes na lista obtida pela execução de
         self.actions(state)."""
-        next_state = TakuzuState(state.board)
-
-        pass
+        self.row_counter[action[0]][action[2]] += 1
+        self.column_counter[action[1]][action[2]] += 1
+        return state.do_action(action)
 
     def goal_test(self, state: TakuzuState):
         """Retorna True se e só se o estado passado como argumento é
         um estado objetivo. Deve verificar se todas as posições do tabuleiro
         estão preenchidas com uma sequência de números adjacentes."""
-        # TODO
+        N = self.board.N
+        # verificar numero certo de 1s e 0s nas linhas e nas colunas
+        for i in range(N):
+            if (self.row_counter[i][0] + self.row_counter[i][1] != N): 
+                return False
+            if (self.column_counter[i][0] + self.column_counter[i][1] != N): 
+                return False
+
+        # verificar se ha mais de dois 0s e 1s seguidos
+        for i in range(N):
+            for j in range(N-2):
+                if (self.board.grid[i][j] == self.board.grid[i][j+1] == self.board.grid[i][j+2]):
+                    return False
+        for i in range(N-2):
+            for j in range(N):
+                if (self.board.grid[i][j] == self.board.grid[i+1][j] == self.board.grid[i+2][j]):
+                    return False
+
+        # verificar se ha duas linhas ou duas colunas iguais
+        grid_transposed = np.transpose(self.board.grid)
+        for i in range(N) :
+            for j in range(i+1, N):
+                if (self.board.grid[i] == self.board.grid[j]):
+                    return False
+                if (grid_transposed[i] == grid_transposed[j]):
+                    return False
         pass
 
     def h(self, node: Node):
@@ -186,13 +214,6 @@ if __name__ == "__main__":
     # Imprimir para o standard output no formato indicado.
     
     board = Board.parse_instance_from_stdin()
-    print("Initial:\n", board, sep="")
-    # Imprimir valores adjacentes
-    print(board.adjacent_vertical_numbers(3, 3))
-    print(board.adjacent_horizontal_numbers(3, 3))
-    print(board.adjacent_vertical_numbers(1, 1))
-    print(board.adjacent_horizontal_numbers(1, 1))
     problem = Takuzu(board)
-    initial_state = TakuzuState(board)
-    print(problem.actions(initial_state))
-    pass
+    goal_node = depth_first_tree_search(problem)
+    print(goal_node.state.board)

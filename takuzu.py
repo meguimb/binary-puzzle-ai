@@ -27,16 +27,29 @@ class TakuzuState:
         self.id = TakuzuState.state_id
         TakuzuState.state_id += 1
 
+        N = self.board.N
+        self.row_counter = np.zeros((N, 2), int)
+        self.column_counter = np.zeros((N, 2), int)
+        
+        for i in range(N):
+            for j in range(N):
+                curr = board.get_number(i, j)
+                if (curr < 2):
+                    self.row_counter[i][curr] += 1
+                    self.column_counter[j][curr] += 1
+
     def __lt__(self, other):
         return self.id < other.id
 
     def do_action(self, action):
         row, column, num = action
-        next_grid = np.array([row[:] for row in self.board.grid])
-        next_grid[row][column] = num
-        next_board = Board(self.board.N, next_grid)
-        next_state = TakuzuState(next_board)
-        return next_state
+        if (self.board.grid[row][column] == 2):
+            next_grid = np.array([row[:] for row in self.board.grid])
+            next_grid[row][column] = num
+            next_board = Board(self.board.N, next_grid)
+            next_state = TakuzuState(next_board)
+            return next_state
+        return None
     # TODO: outros metodos da classe
 
 
@@ -141,9 +154,20 @@ class Takuzu(Problem):
             for j in range(N):
                 curr = board.get_number(i, j)
                 if (curr < 2):
-                    self.row_counter[i-1][curr] += 1
-                    self.column_counter[j-1][curr] += 1
-        pass
+                    self.row_counter[i][curr] += 1
+                    self.column_counter[j][curr] += 1
+
+
+    def can_add(self, row, column, play, state: TakuzuState):
+        if (state.board.get_number(row, column)) != 2:
+            return False
+        if (state.row_counter[row][play] > round(state.board.N/2)):
+            return False
+        if (state.board.adjacent_horizontal_numbers(row, column) == play):
+            return False
+        if (state.board.adjacent_vertical_numbers(row, column) == play):
+            return False
+        return True 
 
     def actions(self, state: TakuzuState):
         """Retorna uma lista de ações que podem ser executadas a
@@ -152,51 +176,73 @@ class Takuzu(Problem):
         N = self.board.N
         for i in range(N):
             for j in range(N):
-                if (board.get_number(i, j)) == 2:
+                if self.can_add(i, j, 0, state):
                     actions += [(i, j, 0)]
+                if self.can_add(i, j, 1, state):
                     actions += [(i, j, 1)]
         return actions
+
+
 
     def result(self, state: TakuzuState, action):
         """Retorna o estado resultante de executar a 'action' sobre
         'state' passado como argumento. A ação a executar deve ser uma
         das presentes na lista obtida pela execução de
         self.actions(state)."""
-        self.row_counter[action[0]][action[2]] += 1
-        self.column_counter[action[1]][action[2]] += 1
-        return state.do_action(action)
+        # print(self.row_counter)
+        # print(action)
+        new_state = state.do_action(action)
+        return new_state
 
     def goal_test(self, state: TakuzuState):
         """Retorna True se e só se o estado passado como argumento é
         um estado objetivo. Deve verificar se todas as posições do tabuleiro
         estão preenchidas com uma sequência de números adjacentes."""
-        N = self.board.N
+        N = state.board.N
         # verificar numero certo de 1s e 0s nas linhas e nas colunas
+        # print(state.board.grid)
         for i in range(N):
-            if (self.row_counter[i][0] + self.row_counter[i][1] != N): 
+            for j in range(N):
+                if state.board.get_number(i, j) == 2:
+                    return False
+            # print("coco", state.row_counter[i][0], state.row_counter[i][1], round(N/2))
+            if (state.row_counter[i][0] + state.row_counter[i][1] != N 
+                or state.row_counter[i][0] > round(N/2) or state.row_counter[i][1] > round(N/2)): 
                 return False
-            if (self.column_counter[i][0] + self.column_counter[i][1] != N): 
+            if (state.column_counter[i][0] + state.column_counter[i][1] != N
+                or state.column_counter[i][0] > round(N/2) or state.column_counter[i][1] > round(N/2)): 
+                # print("ohhhh no")
                 return False
 
+        # print("number of 0s and 1s PASSED")
+        # print(round(N/2))
         # verificar se ha mais de dois 0s e 1s seguidos
         for i in range(N):
             for j in range(N-2):
-                if (self.board.grid[i][j] == self.board.grid[i][j+1] == self.board.grid[i][j+2]):
+                if (state.board.grid[i][j] == state.board.grid[i][j+1] == state.board.grid[i][j+2]):
+                    # print("ok??")
                     return False
         for i in range(N-2):
             for j in range(N):
-                if (self.board.grid[i][j] == self.board.grid[i+1][j] == self.board.grid[i+2][j]):
+                if (state.board.grid[i][j] == state.board.grid[i+1][j] == state.board.grid[i+2][j]):
+                    # print("fuck u")
                     return False
 
+        # print("checking columns and rows")
         # verificar se ha duas linhas ou duas colunas iguais
-        grid_transposed = np.transpose(self.board.grid)
+        grid_transposed = np.transpose(state.board.grid)
         for i in range(N) :
             for j in range(i+1, N):
-                if (self.board.grid[i] == self.board.grid[j]):
+                if np.array_equal(state.board.grid[i], state.board.grid[j]):
                     return False
-                if (grid_transposed[i] == grid_transposed[j]):
+                if np.array_equal(grid_transposed[i],grid_transposed[j]):
                     return False
-        pass
+        # print("all goal tests passed!")
+        # print(state.board)
+        # print(state.row_counter)
+        # print(state.column_counter)
+        return True
+    
 
     def h(self, node: Node):
         """Função heuristica utilizada para a procura A*."""
@@ -216,4 +262,6 @@ if __name__ == "__main__":
     board = Board.parse_instance_from_stdin()
     problem = Takuzu(board)
     goal_node = depth_first_tree_search(problem)
+    # print("leggo")
     print(goal_node.state.board)
+

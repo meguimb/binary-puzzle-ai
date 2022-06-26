@@ -157,11 +157,16 @@ class Takuzu(Problem):
                     self.row_counter[i][curr] += 1
                     self.column_counter[j][curr] += 1
 
+    def is_free(self, row, column, state:TakuzuState):
+        return (state.board.get_number(row, column) == 2 )
 
     def can_add(self, row, column, play, state: TakuzuState):
         N = state.board.N
-        if (state.board.get_number(row, column)) != 2:
+        if not self.is_free(row, column, state):
             return False
+
+        # if (state.board.get_number(row, column)) != 2:
+        #    return False
         if (state.row_counter[row][play] > round(state.board.N/2)):
             return False
         if (state.board.adjacent_horizontal_numbers(row, column) == (play, play)):
@@ -181,10 +186,17 @@ class Takuzu(Problem):
         N = self.board.N
         for i in range(N):
             for j in range(N):
-                if self.can_add(i, j, 0, state):
-                    actions += [(i, j, 0)]
-                if self.can_add(i, j, 1, state):
-                    actions += [(i, j, 1)]
+                if not self.is_free(i, j, state):
+                    continue
+                else:
+                    if (state.board.adjacent_horizontal_numbers(i, j)[0] == state.board.adjacent_horizontal_numbers(i, j)[1] != 2):
+                        return [(i, j, 1 - state.board.adjacent_horizontal_numbers(i, j)[0])]
+                    if (state.board.adjacent_vertical_numbers(i, j)[0] == state.board.adjacent_vertical_numbers(i, j)[1] != 2):
+                        return [(i, j, 1 - state.board.adjacent_vertical_numbers(i, j)[0])]
+                    if self.can_add(i, j, 0, state):
+                        actions += [(i, j, 0)]
+                    if self.can_add(i, j, 1, state):
+                        actions += [(i, j, 1)]
         return actions
 
 

@@ -193,6 +193,17 @@ class Takuzu(Problem):
                         return [(i, j, 1 - state.board.adjacent_horizontal_numbers(i, j)[0])]
                     if (state.board.adjacent_vertical_numbers(i, j)[0] == state.board.adjacent_vertical_numbers(i, j)[1] != 2):
                         return [(i, j, 1 - state.board.adjacent_vertical_numbers(i, j)[0])]
+
+                    if (i >= 2 and (state.board.get_number(i-2, j) == state.board.get_number(i-1, j) != 2)):
+                        return [(i, j, 1 - state.board.get_number(i-1, j))]
+                    if (i <= N-3 and (state.board.get_number(i+1, j) == state.board.get_number(i+2, j) != 2)):
+                        return [(i, j, 1 - state.board.get_number(i+1, j))]
+
+                    if (j >= 2 and (state.board.get_number(i, j-2) == state.board.get_number(i, j-1) != 2)):
+                        return [(i, j, 1 - state.board.get_number(i, j-1))]
+                    if (j <= N-3 and (state.board.get_number(i, j+1) == state.board.get_number(i, j+2) != 2)):
+                        return [(i, j, 1 - state.board.get_number(i, j+1))]
+
                     if self.can_add(i, j, 0, state):
                         actions += [(i, j, 0)]
                     if self.can_add(i, j, 1, state):

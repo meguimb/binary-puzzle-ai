@@ -2,9 +2,9 @@
 # Devem alterar as classes e funções neste ficheiro de acordo com as instruções do enunciado.
 # Além das funções e classes já definidas, podem acrescentar outras que considerem pertinentes.
 
-# Grupo 00:
-# 00000 Nome1
-# 00000 Nome2
+# Grupo 38:
+# 99270 Margarida Bezerra
+# 99272 Maria Sofia Mateus Pinho
 
 from pickle import FALSE
 import sys
@@ -19,36 +19,36 @@ from search import (
     recursive_best_first_search,
 )
 
+def deepcopy_array(lst):
+    lst_copy = np.zeros(len(lst), int)
+    for i in range(len(lst)):
+        lst_copy[i] = lst[i]
+    return lst_copy
 
+def get_half(N):
+    if N%2==0:
+        return N/2
+    else:
+        return N//2 + 1
 class TakuzuState:
     state_id = 0
 
-    def __init__(self, board, from_prev_state=False, row_counter=[], column_counter=[], filled=0, action=[]):
+    def __init__(self, board):
         self.board = board
         self.id = TakuzuState.state_id
         TakuzuState.state_id += 1
 
         N = self.board.N
-        if (from_prev_state == False):
-            self.row_counter = np.zeros((N, 2), int)
-            self.column_counter = np.zeros((N, 2), int)
-            self.filled = 0
-            for i in range(N):
-                for j in range(N):
-                    curr = board.get_number(i, j)
-                    if (curr < 2):
-                        self.row_counter[i][curr] += 1
-                        self.column_counter[j][curr] += 1
-                        self.filled += 1
-        else:
-            print("aijsbdas")
-            row, column, num = action
-            self.row_counter = np.array([row[:] for row in row_counter])
-            self.row_counter[row][num] += 1
-            self.column_counter = np.array([row[:] for row in column_counter])
-            self.column_counter[row][num] += 1
-            self.filled = filled + 1
-            print(self.row_counter, column_counter, filled)
+        self.row_counter = np.zeros((N, 2), int)
+        self.column_counter = np.zeros((N, 2), int)
+        self.filled = 0
+        for i in range(N):
+            for j in range(N):
+                curr = board.get_number(i, j)
+                if (curr < 2):
+                    self.row_counter[i][curr] += 1
+                    self.column_counter[j][curr] += 1
+                    self.filled += 1
 
 
     def __lt__(self, other):
@@ -63,6 +63,23 @@ class TakuzuState:
             next_state = TakuzuState(next_board)
             return next_state
         return None
+
+    # verificar se há 2 0s de um lado e 2 1s do outro
+    def check_impossible_play(self, i, j):
+        N = self.board.N
+        board = self.board
+        if N < 5:
+            return False
+        if i < 2 and j < 2:
+            return False
+        if board.get_number(i-1,j)==board.get_number(i-2,j)==0 and board.get_number(i+1,j)==board.get_number(i+2,j)==1:
+            return True
+        if board.get_number(i-1,j)==board.get_number(i-2,j)==1 and board.get_number(i+1,j)==board.get_number(i+2,j)==0:
+            return True
+        if board.get_number(i,j-1)==board.get_number(i,j-2)==0 and board.get_number(i,j+1)==board.get_number(i,j+2)==1:
+            return True
+        if board.get_number(i,j-1)==board.get_number(i,j-2)==1 and board.get_number(i,j+1)==board.get_number(i,j+2)==0:
+            return True
     # TODO: outros metodos da classe
 
 
@@ -107,6 +124,7 @@ class Board:
             right = self.get_number(row, col+1)
 
         return (left, right)
+
 
     @staticmethod
     def parse_instance_from_stdin():
@@ -154,7 +172,6 @@ class Board:
 
 class Takuzu(Problem):
     def __init__(self, board: Board):
-        """O construtor especifica o estado inicial."""
         """O construtor especifica o estado inicial."""
         super().__init__(TakuzuState(board))
         self.board = board
@@ -206,12 +223,16 @@ class Takuzu(Problem):
         added = False
         N = self.board.N
         for i in range(N):
+            if state.row_counter[i][0] > get_half(N) or state.row_counter[i][1] > get_half(N):
+                return []
+            if state.column_counter[i][0] > get_half(N) or state.column_counter[i][1] > get_half(N):
+                return []
             for j in range(N):
                 if not self.is_free(i, j, state):
                     continue
                 # check for imediate wrong plays already played
                 else:
-                    #check for compulsory plays
+                    # check for compulsory plays
                     if (state.board.adjacent_horizontal_numbers(i, j)[0] == state.board.adjacent_horizontal_numbers(i, j)[1] != 2):
                         return [(i, j, 1 - state.board.adjacent_horizontal_numbers(i, j)[0])]
                     if (state.board.adjacent_vertical_numbers(i, j)[0] == state.board.adjacent_vertical_numbers(i, j)[1] != 2):
@@ -262,7 +283,8 @@ class Takuzu(Problem):
                             return []
                         elif (state.row_counter[i][1] > N/2+1):
                             return []  
-
+                    if state.check_impossible_play(i, j):
+                        return []
                     if (added == False):
                         if self.can_add(i, j, 0, state):
                             actions += [(i, j, 0)]
@@ -270,6 +292,28 @@ class Takuzu(Problem):
                         if self.can_add(i, j, 1, state):
                             actions += [(i, j, 1)]
                             added = True
+        # verificar se nenhuma das jogadas faz 2 linhas/2 colunas iguais
+        if len(actions) == 2:
+            row, column, play = actions[0]
+            play2 = actions[1][2]
+            grid_transposed = np.transpose(state.board.grid)
+            row_cpy = deepcopy_array(state.board.grid[row])
+            column_cpy = deepcopy_array(grid_transposed[column])
+            row_cpy2 = deepcopy_array(state.board.grid[row])
+            column_cpy2 = deepcopy_array(grid_transposed[column])
+            row_cpy[column] = play
+            column_cpy[row] = play
+            row_cpy2[column] = play2
+            column_cpy2[row] = play2
+            for j in range(N):
+                if np.array_equal(row_cpy, state.board.grid[j]):
+                    return [actions[1]]
+                if np.array_equal(column_cpy,grid_transposed[j]):
+                    return [actions[1]]
+                if np.array_equal(row_cpy2, state.board.grid[j]):
+                    return [actions[0]]
+                if np.array_equal(column_cpy2,grid_transposed[j]):
+                    return [actions[0]]
         return actions
 
 
@@ -287,14 +331,6 @@ class Takuzu(Problem):
         estão preenchidas com uma sequência de números adjacentes."""
         N = state.board.N
 
-        # apagar:
-        '''full = True
-        for i in range(N):
-            for j in range(N):
-                if state.board.get_number(i, j) == 2:
-                    full = False
-        if (full == True):
-            print(state.board)'''
         # verificar se todos os espaços estão preenchidos
         if state.filled != (N*N):
             return False

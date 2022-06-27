@@ -23,21 +23,33 @@ from search import (
 class TakuzuState:
     state_id = 0
 
-    def __init__(self, board):
+    def __init__(self, board, from_prev_state=False, row_counter=[], column_counter=[], filled=0, action=[]):
         self.board = board
         self.id = TakuzuState.state_id
         TakuzuState.state_id += 1
 
         N = self.board.N
-        self.row_counter = np.zeros((N, 2), int)
-        self.column_counter = np.zeros((N, 2), int)
-        
-        for i in range(N):
-            for j in range(N):
-                curr = board.get_number(i, j)
-                if (curr < 2):
-                    self.row_counter[i][curr] += 1
-                    self.column_counter[j][curr] += 1
+        if (from_prev_state == False):
+            self.row_counter = np.zeros((N, 2), int)
+            self.column_counter = np.zeros((N, 2), int)
+            self.filled = 0
+            for i in range(N):
+                for j in range(N):
+                    curr = board.get_number(i, j)
+                    if (curr < 2):
+                        self.row_counter[i][curr] += 1
+                        self.column_counter[j][curr] += 1
+                        self.filled += 1
+        else:
+            print("aijsbdas")
+            row, column, num = action
+            self.row_counter = np.array([row[:] for row in row_counter])
+            self.row_counter[row][num] += 1
+            self.column_counter = np.array([row[:] for row in column_counter])
+            self.column_counter[row][num] += 1
+            self.filled = filled + 1
+            print(self.row_counter, column_counter, filled)
+
 
     def __lt__(self, other):
         return self.id < other.id
@@ -130,7 +142,9 @@ class Board:
         result = ''
         for i in range(self.N):
             for j in range(self.N):
-                if(j == self.N-1):
+                if i == self.N-1 and j == self.N-1:
+                    result += str(self.grid[i][j])
+                elif(j == self.N-1):
                     result += str(self.grid[i][j]) + '\n'
                 else:
                     result += str(self.grid[i][j]) + '\t'
@@ -145,18 +159,7 @@ class Takuzu(Problem):
         super().__init__(TakuzuState(board))
         self.board = board
         N = board.N
-        self.row_counter = np.zeros((N, 2), int)
-        self.column_counter = np.zeros((N, 2), int)
-        # tomando como ex a instancia de takuzu na pagina 2
-        # column 0's and 1's: [[0, 1], [1, 2], [1, 0], [2, 0]] => na 1a coluna tem 0 "0"s e 1 "1"
-        # row 0's and 1's: [[1, 1], [1, 0], [1, 0], [1, 2]]
-        
-        for i in range(N):
-            for j in range(N):
-                curr = board.get_number(i, j)
-                if (curr < 2):
-                    self.row_counter[i][curr] += 1
-                    self.column_counter[j][curr] += 1
+
 
     def is_free(self, row, column, state:TakuzuState):
         return (state.board.get_number(row, column) == 2 )
@@ -182,7 +185,18 @@ class Takuzu(Problem):
             if (state.row_counter[row][play] >= N/2+1 or 
                 state.column_counter[column][play] >= N/2+1):
                 return False
-        # verificar se não compelta 3 seguidos à direita e esquerda / cima e baixo
+
+        # verificar se não completa 3 seguidos à direita e esquerda / cima e baixo
+        if row >= 2 and (state.board.get_number(row-2, column) == state.board.get_number(row-1, column) == play):
+            return False
+        if row <= N-3 and (state.board.get_number(row+1, column) == state.board.get_number(row+2, column) == play):
+            return False
+
+        if column >= 2 and (state.board.get_number(row, column-2) == state.board.get_number(row, column-1) == play):
+            return False
+        if column <= N-3 and (state.board.get_number(row, column+1) == state.board.get_number(row, column+2) == play):
+            return False
+
         return True 
 
     def actions(self, state: TakuzuState):
@@ -195,7 +209,9 @@ class Takuzu(Problem):
             for j in range(N):
                 if not self.is_free(i, j, state):
                     continue
+                # check for imediate wrong plays already played
                 else:
+                    #check for compulsory plays
                     if (state.board.adjacent_horizontal_numbers(i, j)[0] == state.board.adjacent_horizontal_numbers(i, j)[1] != 2):
                         return [(i, j, 1 - state.board.adjacent_horizontal_numbers(i, j)[0])]
                     if (state.board.adjacent_vertical_numbers(i, j)[0] == state.board.adjacent_vertical_numbers(i, j)[1] != 2):
@@ -210,6 +226,42 @@ class Takuzu(Problem):
                         return [(i, j, 1 - state.board.get_number(i, j-1))]
                     if (j <= N-3 and (state.board.get_number(i, j+1) == state.board.get_number(i, j+2) != 2)):
                         return [(i, j, 1 - state.board.get_number(i, j+1))]
+                    
+                    # verificar se o número de 0s/1s numa linha/coluna obriga a uma jogada obrigatória
+                    if (N % 2 == 0):
+                        if (state.column_counter[j][0] == N/2):
+                            return [(i, j, 1)]
+                        elif (state.column_counter[j][1] == N/2):
+                            return [(i, j, 0)]
+                        elif (state.row_counter[i][0] == N/2):
+                            return [(i, j, 1)]
+                        elif (state.row_counter[i][1] == N/2):
+                            return [(i, j, 0)]
+                        elif (state.column_counter[j][0] > N/2):
+                            return []
+                        elif (state.column_counter[j][1] > N/2):
+                            return []
+                        elif (state.row_counter[i][0] > N/2):
+                            return []
+                        elif (state.row_counter[i][1] > N/2):
+                            return []
+                    elif (N % 2 == 1):
+                        if (state.column_counter[j][0] == N/2+1):
+                            return [(i, j, 1)]
+                        elif (state.column_counter[j][1] == N/2+1):
+                            return [(i, j, 0)]
+                        elif (state.row_counter[i][0] == N/2+1):
+                            return [(i, j, 1)]
+                        elif (state.row_counter[i][1] == N/2+1):
+                            return [(i, j, 0)]
+                        elif (state.column_counter[j][0] > N/2+1):
+                            return []
+                        elif (state.column_counter[j][1] > N/2+1):
+                            return []
+                        elif (state.row_counter[i][0] > N/2+1):
+                            return []
+                        elif (state.row_counter[i][1] > N/2+1):
+                            return []  
 
                     if (added == False):
                         if self.can_add(i, j, 0, state):
@@ -243,12 +295,11 @@ class Takuzu(Problem):
                     full = False
         if (full == True):
             print(state.board)'''
-
+        # verificar se todos os espaços estão preenchidos
+        if state.filled != (N*N):
+            return False
         # verificar numero certo de 1s e 0s nas linhas e nas colunas
         for i in range(N):
-            for j in range(N):
-                if state.board.get_number(i, j) == 2:
-                    return False
             if (N % 2 == 0):
                 if (state.row_counter[i][0] + state.row_counter[i][1] != N 
                     or state.row_counter[i][0] > N/2 or state.row_counter[i][1] > N/2): 
@@ -269,9 +320,7 @@ class Takuzu(Problem):
             for j in range(N-2):
                 if (state.board.grid[i][j] == state.board.grid[i][j+1] == state.board.grid[i][j+2]):
                     return False
-        for i in range(N-2):
-            for j in range(N):
-                if (state.board.grid[i][j] == state.board.grid[i+1][j] == state.board.grid[i+2][j]):
+                if (state.board.grid[j][i] == state.board.grid[j+1][i] == state.board.grid[j+2][i]):
                     return False
 
         # verificar se ha duas linhas ou duas colunas iguais

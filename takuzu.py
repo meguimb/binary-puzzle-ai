@@ -6,6 +6,7 @@
 # 00000 Nome1
 # 00000 Nome2
 
+from pickle import FALSE
 import sys
 import numpy as np
 from search import (
@@ -173,9 +174,14 @@ class Takuzu(Problem):
             return False
         if (state.board.adjacent_vertical_numbers(row, column) == (play, play)):
             return False
-        if (state.row_counter[row][play] >= round(N/2) or 
-            state.column_counter[column][play] >= round(N/2)):
-            return False
+        if (N % 2 == 0):
+            if (state.row_counter[row][play] >= N/2 or 
+                state.column_counter[column][play] >= N/2):
+                return False
+        if (N % 2 == 1):
+            if (state.row_counter[row][play] >= N/2+1 or 
+                state.column_counter[column][play] >= N/2+1):
+                return False
         # verificar se não compelta 3 seguidos à direita e esquerda / cima e baixo
         return True 
 
@@ -183,6 +189,7 @@ class Takuzu(Problem):
         """Retorna uma lista de ações que podem ser executadas a
         partir do estado passado como argumento."""
         actions = []
+        added = False
         N = self.board.N
         for i in range(N):
             for j in range(N):
@@ -204,12 +211,14 @@ class Takuzu(Problem):
                     if (j <= N-3 and (state.board.get_number(i, j+1) == state.board.get_number(i, j+2) != 2)):
                         return [(i, j, 1 - state.board.get_number(i, j+1))]
 
-                    if self.can_add(i, j, 0, state):
-                        actions += [(i, j, 0)]
-                    if self.can_add(i, j, 1, state):
-                        actions += [(i, j, 1)]
+                    if (added == False):
+                        if self.can_add(i, j, 0, state):
+                            actions += [(i, j, 0)]
+                            added = True
+                        if self.can_add(i, j, 1, state):
+                            actions += [(i, j, 1)]
+                            added = True
         return actions
-
 
 
     def result(self, state: TakuzuState, action):
@@ -225,26 +234,51 @@ class Takuzu(Problem):
         um estado objetivo. Deve verificar se todas as posições do tabuleiro
         estão preenchidas com uma sequência de números adjacentes."""
         N = state.board.N
+
+        # apagar:
+        full = True
+        for i in range(N):
+            for j in range(N):
+                if state.board.get_number(i, j) == 2:
+                    full = False
+        if (full == True):
+            print(state.board)
+
         # verificar numero certo de 1s e 0s nas linhas e nas colunas
         for i in range(N):
             for j in range(N):
                 if state.board.get_number(i, j) == 2:
+                    print('false1')
                     return False
-            if (state.row_counter[i][0] + state.row_counter[i][1] != N 
-                or state.row_counter[i][0] > round(N/2) or state.row_counter[i][1] > round(N/2)): 
-                return False
-            if (state.column_counter[i][0] + state.column_counter[i][1] != N
-                or state.column_counter[i][0] > round(N/2) or state.column_counter[i][1] > round(N/2)): 
-                return False
+            if (N % 2 == 0):
+                if (state.row_counter[i][0] + state.row_counter[i][1] != N 
+                    or state.row_counter[i][0] > N/2 or state.row_counter[i][1] > N/2): 
+                    print('false2')
+                    return False
+                if (state.column_counter[i][0] + state.column_counter[i][1] != N
+                    or state.column_counter[i][0] > N/2 or state.column_counter[i][1] > N/2): 
+                    print('false3')
+                    return False
+            elif (N % 2 == 1):
+                if (state.row_counter[i][0] + state.row_counter[i][1] != N 
+                    or state.row_counter[i][0] > N/2+1 or state.row_counter[i][1] > N/2+1): 
+                    print('false2')
+                    return False
+                if (state.column_counter[i][0] + state.column_counter[i][1] != N
+                    or state.column_counter[i][0] > N/2+1 or state.column_counter[i][1] > N/2+1): 
+                    print('false3')
+                    return False
 
         # verificar se ha mais de dois 0s e 1s seguidos
         for i in range(N):
             for j in range(N-2):
                 if (state.board.grid[i][j] == state.board.grid[i][j+1] == state.board.grid[i][j+2]):
+                    print('false4')
                     return False
         for i in range(N-2):
             for j in range(N):
                 if (state.board.grid[i][j] == state.board.grid[i+1][j] == state.board.grid[i+2][j]):
+                    print('false5')
                     return False
 
         # verificar se ha duas linhas ou duas colunas iguais
@@ -252,9 +286,12 @@ class Takuzu(Problem):
         for i in range(N) :
             for j in range(i+1, N):
                 if np.array_equal(state.board.grid[i], state.board.grid[j]):
+                    print('false6')
                     return False
                 if np.array_equal(grid_transposed[i],grid_transposed[j]):
+                    print('false7')
                     return False
+        print('true')
         return True
     
 
@@ -277,4 +314,3 @@ if __name__ == "__main__":
     problem = Takuzu(board)
     goal_node = depth_first_tree_search(problem)
     print(goal_node.state.board)
-

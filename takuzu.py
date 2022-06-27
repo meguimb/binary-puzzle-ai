@@ -236,49 +236,42 @@ class Takuzu(Problem):
         N = state.board.N
 
         # apagar:
-        full = True
+        '''full = True
         for i in range(N):
             for j in range(N):
                 if state.board.get_number(i, j) == 2:
                     full = False
         if (full == True):
-            print(state.board)
+            print(state.board)'''
 
         # verificar numero certo de 1s e 0s nas linhas e nas colunas
         for i in range(N):
             for j in range(N):
                 if state.board.get_number(i, j) == 2:
-                    print('false1')
                     return False
             if (N % 2 == 0):
                 if (state.row_counter[i][0] + state.row_counter[i][1] != N 
                     or state.row_counter[i][0] > N/2 or state.row_counter[i][1] > N/2): 
-                    print('false2')
                     return False
                 if (state.column_counter[i][0] + state.column_counter[i][1] != N
                     or state.column_counter[i][0] > N/2 or state.column_counter[i][1] > N/2): 
-                    print('false3')
                     return False
             elif (N % 2 == 1):
                 if (state.row_counter[i][0] + state.row_counter[i][1] != N 
                     or state.row_counter[i][0] > N/2+1 or state.row_counter[i][1] > N/2+1): 
-                    print('false2')
                     return False
                 if (state.column_counter[i][0] + state.column_counter[i][1] != N
                     or state.column_counter[i][0] > N/2+1 or state.column_counter[i][1] > N/2+1): 
-                    print('false3')
                     return False
 
         # verificar se ha mais de dois 0s e 1s seguidos
         for i in range(N):
             for j in range(N-2):
                 if (state.board.grid[i][j] == state.board.grid[i][j+1] == state.board.grid[i][j+2]):
-                    print('false4')
                     return False
         for i in range(N-2):
             for j in range(N):
                 if (state.board.grid[i][j] == state.board.grid[i+1][j] == state.board.grid[i+2][j]):
-                    print('false5')
                     return False
 
         # verificar se ha duas linhas ou duas colunas iguais
@@ -286,12 +279,9 @@ class Takuzu(Problem):
         for i in range(N) :
             for j in range(i+1, N):
                 if np.array_equal(state.board.grid[i], state.board.grid[j]):
-                    print('false6')
                     return False
                 if np.array_equal(grid_transposed[i],grid_transposed[j]):
-                    print('false7')
                     return False
-        print('true')
         return True
     
 

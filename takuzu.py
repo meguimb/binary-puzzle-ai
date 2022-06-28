@@ -173,9 +173,10 @@ class Board:
 class Takuzu(Problem):
     def __init__(self, board: Board):
         """O construtor especifica o estado inicial."""
-        super().__init__(TakuzuState(board))
+        init_state = TakuzuState(board)
+        super().__init__(init_state)
         self.board = board
-        N = board.N
+        self.curr_state = init_state
 
 
     def is_free(self, row, column, state:TakuzuState):
@@ -323,6 +324,7 @@ class Takuzu(Problem):
         das presentes na lista obtida pela execução de
         self.actions(state)."""
         new_state = state.do_action(action)
+        self.curr_state = new_state
         return new_state
 
     def goal_test(self, state: TakuzuState):
@@ -372,8 +374,7 @@ class Takuzu(Problem):
 
     def h(self, node: Node):
         """Função heuristica utilizada para a procura A*."""
-        # TODO
-        pass
+        return self.curr_state.board.N - self.curr_state.filled
 
     # TODO: outros metodos da classe
 
@@ -387,5 +388,5 @@ if __name__ == "__main__":
     
     board = Board.parse_instance_from_stdin()
     problem = Takuzu(board)
-    goal_node = depth_first_tree_search(problem)
+    goal_node = astar(problem)
     print(goal_node.state.board)

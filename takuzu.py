@@ -388,5 +388,5 @@ if __name__ == "__main__":
     
     board = Board.parse_instance_from_stdin()
     problem = Takuzu(board)
-    goal_node = astar(problem)
+    goal_node = astar_search(problem)
     print(goal_node.state.board)
